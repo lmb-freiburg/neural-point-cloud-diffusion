@@ -1,0 +1,31 @@
+train_dataset: SRNCarsTrain
+
+model:
+    n_obj: 2347
+    coords_dim: 3
+    feats_dim: 32
+    num_points: 512
+    use_view_dir: False
+    width: 1024
+    layers: 24
+    heads: 16
+
+pointnerf_training:
+    batch_size: 8
+    max_epochs: 5000
+    base_learning_rate: 1.e-3
+
+diffusion_training:
+    batch_size: 32
+    max_iterations: 1800000
+    base_learning_rate: 7.e-5
+    weight_decay: 0.01
+    use_ema: True
+    ema_params: 
+        - !!python/tuple [1, 0.9999, 0.9999, False]
+
+diffusion_evaluation:
+    num_samples: 1000
+    poses_path: data/srncars_test_poses.npy
+    intrinsics_path: data/srncars_test_intrinsics.npy
+    inception_pkl_path: data/cars_test_inception_stylegan.pkl

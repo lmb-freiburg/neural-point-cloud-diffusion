@@ -1,0 +1,10 @@
+numpy==1.23.0
+easydict
+pandas
+scikit-image
+matplotlib
+Pillow==9.2.0
+wandb
+termcolor
+tensorboard
+pytoml
