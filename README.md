@@ -13,7 +13,7 @@ This is the official repository for the publication:
 
 ## Setup
 ### Environment
-The code was tested with python 3.10 and PyTorch 1.11 and CUDA 11.6 on Ubuntu 22.04. 
+The code was tested with python 3.10 and PyTorch 1.12 and CUDA 11.6 on Ubuntu 22.04. 
 
 To set up the environment, clone this repository and run the following commands from the root directory of this repository:
 ```bash
@@ -91,6 +91,40 @@ To run the evaluation of the unconditional generation quality, run the following
 python eval_diffusion.py --config configs/npcd_srncars.yaml --weights weights/npcd_srncars.pt --output /tmp/npcd_eval/srn_cars/diffusion
 ```
 The result of this evaluation is a FID=28.6.
+
+## Training
+
+The training consists of two stages:
+1. PointNeRF autodecoder training
+2. Diffusion model training
+
+### SRN Cars Training
+
+All following commands operate in a output directory at `/tmp/npcd_train/srn_cars`. Change this to a custom output directory if you want.
+
+#### PointNeRF Autodecoder Training
+To run the training of the PointNeRF Autodecoder, run the following command:
+```bash
+python train_pointnerf.py --config configs/npcd_srncars.yaml --output /tmp/npcd_train/srn_cars/pointnerf
+```
+
+To evaluate the resulting model, run the following command:
+```bash
+python eval_pointnerf.py --config configs/npcd_srncars.yaml --weights /tmp/npcd_train/srn_cars/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-002197500.pt --output /tmp/npcd_train/srn_cars/pointnerf/eval
+```
+The result of this evaluation is a PSNR=30.3.
+
+#### Diffusion Model Training
+To run the training of the diffusion model on the resulting neural point clouds from the previous stage, run the following command:
+```bash
+python train_diffusion.py --config configs/npcd_srncars.yaml --pointnerf_weights /tmp/npcd_train/srn_cars/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-002197500.pt --output /tmp/npcd_train/srn_cars/diffusion
+```
+
+To run the evaluation of the unconditional generation quality for the resulting model, run the following command:
+```bash
+python eval_diffusion.py --config configs/npcd_srncars.yaml --weights /tmp/npcd_train/srn_cars/diffusion/weights_only_checkpoints_dir/npcd-ema_power1_0min0_9999max0_9999buffers0-iter-001800000.pt --output /tmp/npcd_train/srn_cars/diffusion/eval
+```
+Note that this requires the same evaluation setup as described above. The result of this evaluation is a FID=27.6.
 
 ## Citation
 

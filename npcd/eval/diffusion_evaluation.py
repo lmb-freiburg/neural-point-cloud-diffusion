@@ -144,7 +144,6 @@ class DiffusionEvaluation:
                     set([sample_indices[int(i * step_size)] for i in range(num_qualitatives)]))
 
     def _evaluate(self):
-        should_qualitative = (self.cur_sample_idx in self.qualitative_indices) and (self.out_dir is not None)
         num_chunks = math.ceil(self.num_samples / self.generate_batch_size)
         
         for sample_indices in tqdm(chunks(list(range(self.num_samples)), self.generate_batch_size), total=num_chunks):
@@ -154,6 +153,7 @@ class DiffusionEvaluation:
 
             for sample_idx, coords, feats in zip(sample_indices, coords_batch, feats_batch):
                 self.cur_sample_idx = sample_idx
+                should_qualitative = (self.cur_sample_idx in self.qualitative_indices) and (self.out_dir is not None)
                 
                 coords = coords.permute(1, 0)[None].contiguous()  # format required by PointNeRF
                 feats = feats.permute(1, 0)[None].contiguous()  # format required by PointNeRF

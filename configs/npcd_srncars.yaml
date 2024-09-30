@@ -12,7 +12,7 @@ model:
 
 pointnerf_training:
     batch_size: 8
-    max_epochs: 5000
+    max_epochs: 7500
     base_learning_rate: 1.e-3
 
 diffusion_training:
