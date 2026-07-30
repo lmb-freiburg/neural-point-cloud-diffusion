@@ -12,6 +12,14 @@ except ImportError:
     flash_attn_func = None
 
 
+try:
+    from torch.nn.attention import sdpa_kernel, SDPBackend
+    SDPA_BACKENDS = [getattr(SDPBackend, b) for b in ("FLASH_ATTENTION", "CUDNN_ATTENTION", "EFFICIENT_ATTENTION") if hasattr(SDPBackend, b)]
+except ImportError:
+    sdpa_kernel = None
+    SDPA_BACKENDS = None
+
+
 class LayerNorm(nn.Module):
     """ LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False """
 
@@ -61,7 +69,9 @@ class QKVMultiheadAttention(nn.Module):
         self.dropout = dropout
         
         self.use_flash_attn = use_flash_attn
-        
+        assert not use_flash_attn or flash_attn_func is not None or sdpa_kernel is not None, \
+            "use_flash_attn was specified but no option for flash attention is available."
+
         if not self.use_flash_attn:
             self.attn_dropout = nn.Dropout(dropout)
 
@@ -71,8 +81,15 @@ class QKVMultiheadAttention(nn.Module):
         qkv = qkv.view(bs, n_ctx, self.heads, -1)
         q, k, v = torch.split(qkv, attn_ch, dim=-1)
         
-        if self.use_flash_attn:
+        if self.use_flash_attn and flash_attn_func is not None:
             out = flash_attn_func(q, k, v, causal=False, dropout_p=self.dropout if self.training else 0)
+            print(out.shape)  # TODO: remove
+        elif self.use_flash_attn:
+            with sdpa_kernel(SDPA_BACKENDS):
+                out = F.scaled_dot_product_attention(q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2),
+                                                     dropout_p=self.dropout if self.training else 0, is_causal=False)
+            out = out.transpose(1, 2)
+            print(out.shape)  # TODO: remove
         else:
             scale = 1 / math.sqrt(math.sqrt(attn_ch))
             weight = torch.einsum("bthc,bshc->bhts", q * scale, k * scale)  # More stable with f16 than dividing afterwards

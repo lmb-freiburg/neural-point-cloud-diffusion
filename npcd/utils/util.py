@@ -4,10 +4,12 @@ import collections
 import os
 
 import torch
-from torch._six import string_classes
 import numpy as np
 
 from npcd.utils import logging
+
+
+string_classes = (str, bytes)
 
 
 def chunks(lst, n):

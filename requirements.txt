@@ -1,6 +1,6 @@
 numpy==1.23.0
 easydict
-pandas
+pandas==2.0.3
 scikit-image
 matplotlib
 Pillow==9.2.0
@@ -8,3 +8,6 @@ wandb
 termcolor
 tensorboard
 pytoml
+pyyaml
+tqdm
+scipy==1.9.3

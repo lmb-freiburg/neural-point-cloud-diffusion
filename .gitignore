@@ -166,3 +166,4 @@ data/cars_test_inception_stylegan.pkl
 data/cars*
 data/chairs*
 mmgeneration
+torch_knnquery

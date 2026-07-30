@@ -26,12 +26,105 @@ import pickle
 
 import torch
 import numpy as np
-
-import mmcv
-from mmgen.core.evaluation.metrics import FID
+from scipy import linalg
 
 
-class FIDKID(FID):
+try:
+    from mmgen.core.evaluation.metrics import FID as MMGenFID
+except ImportError:
+    MMGenFID = None
+
+
+class FID:
+    """Reimplementation of the FID metric from mmgeneration (mmgen.core.evaluation.metrics.FID),
+    for environments where mmgeneration is not installed.
+    """
+    name = 'FID'
+
+    def __init__(self,
+                 num_images,
+                 inception_pkl=None,
+                 bgr2rgb=True,
+                 inception_args=None):
+        assert inception_args is not None and inception_args.get('type') == 'StyleGAN', \
+            "Only Tero Karras' StyleGAN Inception model is supported. Install mmgeneration for other options."
+
+        self.num_images = num_images
+        self.num_real_need = num_images
+        self.num_fake_need = num_images
+        self.num_real_feeded = 0  # record of the fed real images
+        self.num_fake_feeded = 0  # record of the fed fake images
+        self.inception_pkl = inception_pkl
+        self.bgr2rgb = bgr2rgb
+        self.real_feats = []
+        self.fake_feats = []
+        self.real_mean = None
+        self.real_cov = None
+        self._result_str = None
+
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.inception_net = torch.jit.load(inception_args['inception_path']).eval().to(self.device)
+        print(f"Loaded Tero's Inception model from {inception_args['inception_path']}")
+
+    @torch.no_grad()
+    def feed(self, batch, mode):
+        if mode == 'reals':
+            end = min(batch.shape[0], self.num_real_need - self.num_real_feeded)
+        elif mode == 'fakes':
+            end = min(batch.shape[0], self.num_fake_need - self.num_fake_feeded)
+        else:
+            raise ValueError("The expected mode should be set to 'reals' or 'fakes', "
+                             f"but got '{mode}'")
+
+        if end <= 0:
+            return 0
+
+        batch = batch[:end, ...]
+        if self.bgr2rgb:
+            batch = batch[:, [2, 1, 0]]
+        batch = (batch.to(self.device) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+        feat = self.inception_net(batch, return_features=True).cpu()
+
+        if mode == 'reals':
+            self.real_feats.append(feat)
+            self.num_real_feeded += end
+        else:
+            self.fake_feats.append(feat)
+            self.num_fake_feeded += end
+
+        return end
+
+    @staticmethod
+    def _calc_fid(sample_mean, sample_cov, real_mean, real_cov, eps=1e-6):
+        # note: the `disp` argument that mmgen passes here was removed in scipy 1.18:
+        cov_sqrt = linalg.sqrtm(sample_cov @ real_cov)
+
+        if not np.isfinite(cov_sqrt).all():
+            print('product of cov matrices is singular')
+            offset = np.eye(sample_cov.shape[0]) * eps
+            cov_sqrt = linalg.sqrtm((sample_cov + offset) @ (real_cov + offset))
+
+        if np.iscomplexobj(cov_sqrt):
+            if not np.allclose(np.diagonal(cov_sqrt).imag, 0, atol=1e-3):
+                m = np.max(np.abs(cov_sqrt.imag))
+
+                raise ValueError(f'Imaginary component {m}')
+
+            cov_sqrt = cov_sqrt.real
+
+        mean_diff = sample_mean - real_mean
+        mean_norm = mean_diff @ mean_diff
+
+        trace = np.trace(sample_cov) + np.trace(real_cov) - 2 * np.trace(cov_sqrt)
+
+        fid = mean_norm + trace
+
+        return fid, mean_norm, trace
+
+
+# Use mmgeneration's FID if it is installed (i.e. the original environment), to keep the code
+# execution path for reproducing the results of the publication unchanged:
+class FIDKID(MMGenFID if MMGenFID is not None else FID):
     name = 'FIDKID'
 
     def __init__(self,
@@ -45,7 +138,7 @@ class FIDKID(FID):
         self.real_feats_np = None
 
     def prepare(self):
-        if self.inception_pkl is not None and mmcv.is_filepath(self.inception_pkl):
+        if self.inception_pkl is not None:
             with open(self.inception_pkl, 'rb') as f:
                 reference = pickle.load(f)
                 self.real_mean = reference['mean']

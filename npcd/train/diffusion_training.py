@@ -58,7 +58,7 @@ class DiffusionTraining:
             self.ema_handler = EMAHandler(self.model, ema_params=ema_params)
             
         ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}[dtype]
-        self.autocast_ctx = torch.cuda.amp.autocast(dtype=ptdtype, enabled=(dtype != 'float32'))
+        self.autocast_ctx = torch.amp.autocast('cuda', dtype=ptdtype, enabled=(dtype != 'float32'))
         self.scaler = torch.cuda.amp.GradScaler(enabled=(dtype == 'float16'))
         
         self.grad_clip_max_norm = grad_clip_max_norm
