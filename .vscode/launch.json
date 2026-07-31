@@ -11,10 +11,13 @@
             "program": "eval_diffusion.py",
             "console": "integratedTerminal",
             "justMyCode": true,
+            "preLaunchTask": "Clean Diffusion Evaluation output",
             "args": [
                 "--config", "configs/npcd_srncars.yaml",
                 "--weights", "weights/npcd_srncars.pt",
-                "--output", "/tmp/npcd_eval/srn_cars/diffusion"
+                "--output", "/tmp/npcd_debug/eval/srn_cars/diffusion",
+                "--dtype", "float16",
+                "--tf32",
             ],
             // "env": {
             //     "CUDA_VISIBLE_DEVICES": "0",

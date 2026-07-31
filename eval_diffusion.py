@@ -14,6 +14,10 @@ from npcd.utils import set_seed, writer, logging, load_config, print_config, cp
 
 @torch.no_grad()
 def eval(args):
+    if args.tf32:
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+
     config = load_config(args.config)
     
     out_dir = args.output
@@ -49,11 +53,11 @@ def eval(args):
     print_config(config)
     print()
         
-    model = NPCD(**config["model"])
+    model = NPCD(use_flash_attn=(args.dtype == "float16" or args.dtype == "bfloat16"), **config["model"])
     model.load_state_dict(torch.load(args.weights))
     model.eval().cuda()
 
-    eval = DiffusionEvaluation(out_dir=out_dir, **config["diffusion_evaluation"])
+    eval = DiffusionEvaluation(out_dir=out_dir, generate_dtype=args.dtype, **config["diffusion_evaluation"])
     
     eval(model=model, num_qualitatives=args.num_qualitatives,
          eval_name=args.eval_name, finished_iterations=args.finished_iterations,)
@@ -68,8 +72,11 @@ if __name__ == '__main__':
     parser.add_argument('--config', help="Path to config file.", required=True)
     parser.add_argument('--weights', help="Path to weights of the model.", required=True)
 
+    parser.add_argument('--dtype', type=str, help="Data type for the diffusion generation. Options: float32, float16, bfloat16. Default: float32.", default="float32")
+    parser.add_argument('--tf32', action='store_true', help="Enable TF32 for matmul and cudnn ops. Default: False.")
+
     parser.add_argument('--seed', type=int, help="Random seed. Default: 42.", default=42)
-    
+
     parser.add_argument('--eval_name', help="Name of the evaluation. Optional.", type=str)
     parser.add_argument('--finished_iterations', type=int, help="Number of iterations that the model was trained. Only used for logging. Optional.")
 

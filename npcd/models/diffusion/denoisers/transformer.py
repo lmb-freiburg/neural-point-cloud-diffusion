@@ -83,13 +83,11 @@ class QKVMultiheadAttention(nn.Module):
         
         if self.use_flash_attn and flash_attn_func is not None:
             out = flash_attn_func(q, k, v, causal=False, dropout_p=self.dropout if self.training else 0)
-            print(out.shape)  # TODO: remove
         elif self.use_flash_attn:
             with sdpa_kernel(SDPA_BACKENDS):
                 out = F.scaled_dot_product_attention(q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2),
                                                      dropout_p=self.dropout if self.training else 0, is_causal=False)
             out = out.transpose(1, 2)
-            print(out.shape)  # TODO: remove
         else:
             scale = 1 / math.sqrt(math.sqrt(attn_ch))
             weight = torch.einsum("bthc,bshc->bhts", q * scale, k * scale)  # More stable with f16 than dividing afterwards

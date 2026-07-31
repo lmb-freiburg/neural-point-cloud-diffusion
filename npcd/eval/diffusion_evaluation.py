@@ -22,6 +22,7 @@ class DiffusionEvaluation:
                  generate_batch_size: int = 16,
                  render_batch_size: int = 1,
                  inception_batch_size: int = 32,
+                 generate_dtype: str = 'float32',
                  verbose: bool = True
                  ):
 
@@ -55,6 +56,9 @@ class DiffusionEvaluation:
         self.generate_batch_size = generate_batch_size
         self.render_batch_size = render_batch_size
         self.inception_batch_size = inception_batch_size
+
+        pt_generate_dtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}[generate_dtype]
+        self.generate_autocast_ctx = torch.amp.autocast('cuda', dtype=pt_generate_dtype, enabled=(generate_dtype != 'float32'))
 
         # will be set/used in __call__:
         self.model = None
@@ -149,7 +153,11 @@ class DiffusionEvaluation:
         for sample_indices in tqdm(chunks(list(range(self.num_samples)), self.generate_batch_size), total=num_chunks):
 
             num_to_generate = len(sample_indices)
-            coords_batch, feats_batch = self.model.diffusion.generate(num=num_to_generate, batch_size=num_to_generate, progress=False)
+            with self.generate_autocast_ctx:
+                coords_batch, feats_batch = self.model.diffusion.generate(num=num_to_generate, batch_size=num_to_generate, progress=False)
+            coords_batch = [coords.float() for coords in coords_batch]
+            feats_batch = [feats.float() for feats in feats_batch]
+            torch.cuda.empty_cache()  # release cached memory from the diffusion trajectory before rendering allocates its own buffers
 
             for sample_idx, coords, feats in zip(sample_indices, coords_batch, feats_batch):
                 self.cur_sample_idx = sample_idx

@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Clean Diffusion Evaluation output",
+            "type": "shell",
+            "command": "rm -rf /tmp/npcd_debug/eval/srn_cars/diffusion",
+            "problemMatcher": []
+        }
+    ]
+}
