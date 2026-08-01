@@ -2,9 +2,27 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Clean PointNeRF Evaluation output",
+            "type": "shell",
+            "command": "rm -rf /tmp/npcd_debug/npcd_eval/srn_cars/pointnerf",
+            "problemMatcher": []
+        },
+        {
             "label": "Clean Diffusion Evaluation output",
             "type": "shell",
-            "command": "rm -rf /tmp/npcd_debug/eval/srn_cars/diffusion",
+            "command": "rm -rf /tmp/npcd_debug/npcd_eval/srn_cars/diffusion",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean PointNeRF Training output",
+            "type": "shell",
+            "command": "rm -rf /tmp/npcd_debug/npcd_train/srn_cars/pointnerf",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean Diffusion Training output",
+            "type": "shell",
+            "command": "rm -rf /tmp/npcd_debug/npcd_train/srn_cars/diffusion",
             "problemMatcher": []
         }
     ]

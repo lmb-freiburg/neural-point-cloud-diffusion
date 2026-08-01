@@ -5,7 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Diffusion Evaluation",
+            "name": "SRN Cars PointNeRF Evaluation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "eval_pointnerf.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "preLaunchTask": "Clean PointNeRF Evaluation output",
+            "args": [
+                "--config", "configs/npcd_srncars.yaml",
+                "--weights", "weights/npcd_srncars.pt",
+                "--output", "/tmp/npcd_debug/npcd_eval/srn_cars/pointnerf",
+            ],
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0",
+            // }
+        },
+        {
+            "name": "SRN Cars Diffusion Evaluation",
             "type": "debugpy",
             "request": "launch",
             "program": "eval_diffusion.py",
@@ -15,9 +32,44 @@
             "args": [
                 "--config", "configs/npcd_srncars.yaml",
                 "--weights", "weights/npcd_srncars.pt",
-                "--output", "/tmp/npcd_debug/eval/srn_cars/diffusion",
-                "--dtype", "float16",
-                "--tf32",
+                "--output", "/tmp/npcd_debug/npcd_eval/srn_cars/diffusion",
+                // "--dtype", "float16",
+                // "--tf32",
+            ],
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0",
+            // }
+        },
+        {
+            "name": "SRN Cars PointNeRF Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train_pointnerf.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "preLaunchTask": "Clean PointNeRF Training output",
+            "args": [
+                "--config", "configs/npcd_srncars.yaml",
+                "--output", "/tmp/npcd_debug/npcd_train/srn_cars/pointnerf",
+                "--num_workers", "0",  // for debugging
+            ],
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0",
+            // }
+        },
+        {
+            "name": "SRN Cars Diffusion Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train_diffusion.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "preLaunchTask": "Clean Diffusion Training output",
+            "args": [
+                "--config", "configs/npcd_srncars.yaml",
+                "--pointnerf_weights", "weights/npcd_srncars.pt",  // does not start from scratch, but good for debugging
+                "--output", "/tmp/npcd_debug/npcd_train/srn_cars/diffusion",
+                "--num_workers", "0",  // for debugging
             ],
             // "env": {
             //     "CUDA_VISIBLE_DEVICES": "0",
