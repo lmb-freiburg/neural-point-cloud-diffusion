@@ -21,6 +21,7 @@ from abc import abstractmethod
 from time import time
 
 import numpy as np
+import torch
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import make_np
 import wandb
@@ -49,6 +50,8 @@ def put_scalar(name, scalar, step=None):
         scalar: value
         step: step associated with scalar
     """
+    if isinstance(scalar, torch.Tensor):
+        scalar = scalar.detach()
     scalar = float(scalar)
     EVENT_STORAGE.append({"name": name, "write_type": EventType.SCALAR, "event": scalar, "step": step})
 
