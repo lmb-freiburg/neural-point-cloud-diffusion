@@ -7,6 +7,21 @@ import os.path as osp
 
 import torch
 
+# The PointNeRF rendering allocates tensors whose size depends on how many ray samples hit the
+# point cloud, i.e. it differs for every sample and pose. With the default caching allocator, these
+# varying sizes fragment the large block pool until cudaMalloc fails and PyTorch logs a
+# (recoverable) OOM warning, meanwhile holding almost the entire GPU. Expandable segments back the
+# pool with a single growable virtual segment, which avoids the fragmentation at no runtime cost.
+# This only affects how memory is allocated, not the results. Has to be set before torch
+# initializes CUDA, i.e. before anything is allocated. The setting is not available in the original
+# environment (PyTorch 1.12) and is silently skipped there.
+try:
+    torch._C._accelerator_setAllocatorSettings("expandable_segments:True")
+    print("Enabled expandable segments for the CUDA caching allocator, which avoids memory "
+          "fragmentation during the PointNeRF rendering.")
+except (AttributeError, RuntimeError):
+    pass
+
 from npcd.models import NPCD
 from npcd.eval import DiffusionEvaluation
 from npcd.utils import set_seed, writer, logging, load_config, print_config, cp

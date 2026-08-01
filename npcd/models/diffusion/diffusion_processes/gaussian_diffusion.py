@@ -145,8 +145,29 @@ class GaussianDiffusion(nn.Module):
             
         return coords_next, coords_recon, feats_next, feats_recon
 
-    def p_sample_loop_trajectory(self, denoise_fn, 
-                                 coords_start, feats_start, 
+    def p_sample_loop(self, denoise_fn,
+                      coords_start, feats_start,
+                      coords_clip_range=None, feats_clip_range=None,
+                      progress=False):
+        device = coords_start.device
+
+        coords_t = coords_start
+        feats_t = feats_start
+
+        indices = list(range(self.num_timesteps))[::-1]  # go through reverse trajectory in order (e.g. from x_T to x_T-1, ..., to x_0); t=999 means going from x_1000 to x_999
+        if progress:
+            from tqdm.auto import tqdm
+            indices = tqdm(indices)
+
+        for t in indices:
+            t_batch = torch.tensor([t] * coords_start.shape[0], device=device)
+            out = self.p_sample(denoise_fn=denoise_fn, coords_t=coords_t, feats_t=feats_t, t=t_batch, coords_clip_range=coords_clip_range, feats_clipping_range=feats_clip_range)
+            coords_t, _, feats_t, _ = out
+
+        return coords_t, feats_t
+
+    def p_sample_loop_trajectory(self, denoise_fn,
+                                 coords_start, feats_start,
                                  coords_clip_range=None, feats_clip_range=None,
                                  progress=False):
         device = coords_start.device

@@ -116,13 +116,11 @@ class DiffusionModel(nn.Module):
             coords_start = torch.randn(batch_size, self.coords_dim, self.num_points, device=device)
             feats_start = torch.randn(batch_size, self.feats_dim, self.num_points, device=device)
             
-            coords_ts, _, feats_ts, _ = self.diffusion_process.p_sample_loop_trajectory(denoise_fn=self.denoiser, coords_start=coords_start, feats_start=feats_start, 
-                                                                                        coords_clip_range=(self.coords_normalization.min, self.coords_normalization.max),
-                                                                                        feats_clip_range=(self.feats_normalization.min, self.feats_normalization.max),
-                                                                                        progress=progress)
-            coords = coords_ts[-1]
-            feats = feats_ts[-1]
-            
+            coords, feats = self.diffusion_process.p_sample_loop(denoise_fn=self.denoiser, coords_start=coords_start, feats_start=feats_start,
+                                                                 coords_clip_range=(self.coords_normalization.min, self.coords_normalization.max),
+                                                                 feats_clip_range=(self.feats_normalization.min, self.feats_normalization.max),
+                                                                 progress=progress)
+
             coords = self.coords_normalization(coords)
             feats = self.feats_normalization(feats)
             

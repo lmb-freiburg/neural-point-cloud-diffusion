@@ -226,10 +226,11 @@ class PointNeRFEvaluation:
         runtime_model_in_sec = end_model - start_model if time_and_mem_valid else np.nan
         runtimes = {'runtime_model_in_sec': runtime_model_in_sec,
                     'runtime_model_in_msec': 1000 * runtime_model_in_sec,}
+        # Note: Runtime measurements are for the case of an empty cache (torch.cuda.empty_cache() is called before the model is run). With caching, the runtime is faster.
 
         gpu_mem_alloc = int(torch.cuda.max_memory_allocated() / 1024 / 1024) if time_and_mem_valid else np.nan
         gpu_mem_reserved = int(torch.cuda.max_memory_reserved() / 1024 / 1024) if time_and_mem_valid else np.nan
-        gpu_mem = {'gpu_mem_alloc_in_mib': gpu_mem_alloc, 'gpu_mem_alloc_in_mib': gpu_mem_reserved}
+        gpu_mem = {'gpu_mem_alloc_in_mib': gpu_mem_alloc, 'gpu_mem_reserved_in_mib': gpu_mem_reserved}
 
         return pred, runtimes, gpu_mem
         

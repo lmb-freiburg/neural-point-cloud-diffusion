@@ -157,7 +157,6 @@ class DiffusionEvaluation:
                 coords_batch, feats_batch = self.model.diffusion.generate(num=num_to_generate, batch_size=num_to_generate, progress=False)
             coords_batch = [coords.float() for coords in coords_batch]
             feats_batch = [feats.float() for feats in feats_batch]
-            torch.cuda.empty_cache()  # release cached memory from the diffusion trajectory before rendering allocates its own buffers
 
             for sample_idx, coords, feats in zip(sample_indices, coords_batch, feats_batch):
                 self.cur_sample_idx = sample_idx
