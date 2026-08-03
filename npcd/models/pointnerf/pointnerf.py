@@ -8,13 +8,14 @@ from . import embeddings, fields, renderers
 
 
 class PointNeRF(nn.Module):
-    def __init__(self, n_obj: int, feats_dim: int, num_points: int, use_view_dir: bool):
+    def __init__(self, n_obj: int, feats_dim: int, num_points: int, use_view_dir: bool, max_shading_pts: int):
         super().__init__()
-        
+
         opt = _get_pointnerf_options()
         opt.model.field.kwargs.use_dir = use_view_dir
         opt.model.kp.feat_dim = feats_dim
         opt.model.kp.num = num_points
+        opt.model.field.aggregator.kwargs.max_shading_pts = max_shading_pts
         self.opt = opt
         
         self.voxel_grid = VoxelGrid(**opt.model.voxel_grid)

@@ -227,3 +227,26 @@ class SRNCarsTrain(SRNTrain):
                 i += 1
                 
         super().__init__(root=root, sample_list=sample_list, **kwargs)
+
+
+@register_dataset
+class SRNChairsTrain(SRNTrain):
+
+    base_dataset = 'srn'
+    split = 'chairs_train'
+    
+    def __init__(self, root=None, **kwargs):
+        root = root if root is not None else self._get_path("srn", "root")
+    
+        sample_list = []
+        sample_lists_path = osp.join(osp.dirname(osp.realpath(__file__)), 'sample_lists')
+        split_path = osp.join(sample_lists_path, 'srn_chairs_train.list')
+        blacklist_path = osp.join(sample_lists_path, 'srn_chairs_blacklist.list')
+        blacklist = set(open(blacklist_path).read().splitlines())
+        i = 0
+        for shapenet_id in open(split_path).read().splitlines():
+            if shapenet_id not in blacklist:
+                sample_list.append(("chairs", shapenet_id, i))
+                i += 1
+                
+        super().__init__(root=root, sample_list=sample_list, **kwargs)

@@ -6,6 +6,7 @@ model:
     feats_dim: 32
     num_points: 512
     use_view_dir: False
+    max_shading_pts: 50
     width: 1024
     layers: 24
     heads: 16

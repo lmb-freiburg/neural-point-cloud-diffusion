@@ -13,9 +13,9 @@ This is the official repository for the publication:
 
 ## Setup
 ### Environment
-The code was tested with python 3.10 and PyTorch 1.12 and CUDA 11.6 on Ubuntu 22.04. 
+The experiments in the paper were conducted with python 3.10 and PyTorch 1.12 and CUDA 11.6 on Ubuntu 22.04. 
 
-To set up the environment, clone this repository and run the following commands from the root directory of this repository. Optional commands, that might be helpful for setting up the environment on newer machines, are included as comments:
+To set up an environment with the comparable settings, clone this repository and run the following commands from the root directory of this repository. Optional commands, that might be helpful for setting up the environment on newer machines, are included as comments:
 ```bash
 conda create -y -n npcd python=3.10
 conda activate npcd
@@ -45,7 +45,7 @@ cd ..
 pip install -r requirements.txt
 ```
 
-Alternatively, an environment with newer python, PyTorch, and CUDA versions can be set up as follows. This was tested on Ubuntu 24 with CUDA 13.3 installed. Note that the environment described above matches the one used for the publication, and the newer environment described here might produce different results:
+Alternatively, an environment with newer python, PyTorch, and CUDA versions can be set up as follows. This was tested on Ubuntu 24 with an RTX 4090 GPU and CUDA 13.3 installed. Note that the environment described above matches the one used for the publication, whereas the newer environment described here might produce different results:
 ```bash
 conda create -y -n npcd python=3.13
 conda activate npcd
@@ -73,7 +73,7 @@ ln -s ../cars_test/* .
 cd ..
 mkdir chairs
 cd chairs
-ln -s ../chairs_train/* .
+ln -s ../chairs_train/chairs_2.0_train/* .
 ln -s ../chairs_val/* .
 ln -s ../chairs_test/* .
 cd ..
@@ -91,10 +91,10 @@ cd ..
 
 ## Reproducing Evaluation Results
 
-### SRN Cars Evaluation
+### PointNeRF Autodecoder Evaluation
 
-#### PointNeRF Autodecoder Evaluation
-To run the evaluation of the PointNeRF Autodecoder, run the following command (with choosing a custom output directory if you want):
+#### SRN Cars Evaluation
+To run the evaluation of the PointNeRF Autodecoder on SRN cars, run the following command (with choosing a custom output directory if you want):
 ```bash
 python eval_pointnerf.py --config configs/npcd_srncars.yaml --weights weights/npcd_srncars.pt --output /tmp/npcd_eval/srn_cars/pointnerf
 ```
@@ -102,16 +102,28 @@ The result of this evaluation is a PSNR=30.2.
 
 Note that for runtime measurements, you have to add the flag `--eval_batch_size 1`.
 
-#### Unconditional Generation Evaluation
-To evaluate the unconditional generation quality, we use a similar codebase as [SSDNeRF](https://github.com/Lakonik/SSDNeRF). In particular, to run the evaluation, it is necessary to first extract the Inception features of the real images, as in the SSDNeRF codebase. For this, please clone the [SSDNeRF](https://github.com/Lakonik/SSDNeRF) and set up a separate environment for it, as described in its README. Then, link the data that you downloaded before to `/path/to/SSDNeRF/data/shapenet`, e.g. by running the following commands:
+#### SRN Chairs Evaluation
+To run the evaluation of the PointNeRF Autodecoder on SRN chairs, run the following command (with choosing a custom output directory if you want):
+```bash
+python eval_pointnerf.py --config configs/npcd_srnchairs.yaml --weights weights/npcd_srnchairs.pt --output /tmp/npcd_eval/srn_chairs/pointnerf
+```
+The result of this evaluation is a PSNR=33.7.
+
+Note that for runtime measurements, you have to add the flag `--eval_batch_size 1`.
+
+### Unconditional Generation Evaluation
+
+#### Setup
+To evaluate the unconditional generation quality, we use a similar codebase as [SSDNeRF](https://github.com/Lakonik/SSDNeRF). In particular, to run the evaluation, it is necessary to first extract the Inception features of the real images, as in the SSDNeRF codebase. For this, clone the [SSDNeRF](https://github.com/Lakonik/SSDNeRF) and set up a separate environment for it, as described in its README. Then, link the data that you downloaded before to `/path/to/SSDNeRF/data/shapenet`, e.g. by running the following commands:
 ```bash
 mkdir /path/to/SSDNeRF/data/
 ln -s /path/to/neural-point-cloud-diffusion/data /path/to/SSDNeRF/data/shapenet
 ```
 
-Then, extract the Inception features as described in the `SSDNeRF` README (using the `inception_stat.py` script). Copy or move the resulting files to the `neural-point-cloud-diffusion` repository, for example as follows:
+Then, extract the Inception features as described in the `SSDNeRF` README (using the `inception_stat.py` script; if necessary, execute `export CXX=g++-11` and `CC=gcc-11` before executing the script). Copy or move the resulting files to the `neural-point-cloud-diffusion` repository, for example as follows:
 ```bash
 cp /path/to/SSDNeRF/work_dirs/cache/cars_test_inception_stylegan.pkl /path/to/neural-point-cloud-diffusion/data
+cp /path/to/SSDNeRF/work_dirs/cache/chairs_test_inception_stylegan.pkl /path/to/neural-point-cloud-diffusion/data
 cp /path/to/SSDNeRF/work_dirs/cache/inception-2015-12-05.pt /path/to/neural-point-cloud-diffusion/data
 ```
 
@@ -124,11 +136,19 @@ wget https://lmb.informatik.uni-freiburg.de/people/schroepp/data/chairs_test_inc
 cd ..
 ```
 
-To run the evaluation of the unconditional generation quality, run the following command (with choosing a custom output directory if you want):
+#### SRN Cars Evaluation
+To run the evaluation of the unconditional generation quality on SRN cars, run the following command (with choosing a custom output directory if you want):
 ```bash
 python eval_diffusion.py --config configs/npcd_srncars.yaml --weights weights/npcd_srncars.pt --output /tmp/npcd_eval/srn_cars/diffusion
 ```
 The result of this evaluation is a FID=28.6.
+
+#### SRN Chairs Evaluation
+To run the evaluation of the unconditional generation quality on SRN chairs, run the following command (with choosing a custom output directory if you want):
+```bash
+python eval_diffusion.py --config configs/npcd_srnchairs.yaml --weights weights/npcd_srnchairs.pt --output /tmp/npcd_eval/srn_chairs/diffusion
+```
+The result of this evaluation is a FID=9.89.
 
 ## Training
 
@@ -138,7 +158,7 @@ The training consists of two stages:
 
 ### SRN Cars Training
 
-All following commands operate in a output directory at `/tmp/npcd_train/srn_cars`. Change this to a custom output directory if you want.
+All following commands operate in an output directory at `/tmp/npcd_train/srn_cars`. Change this to a custom output directory if you want.
 
 #### PointNeRF Autodecoder Training
 To run the training of the PointNeRF Autodecoder, run the following command:
@@ -163,6 +183,34 @@ To run the evaluation of the unconditional generation quality for the resulting 
 python eval_diffusion.py --config configs/npcd_srncars.yaml --weights /tmp/npcd_train/srn_cars/diffusion/weights_only_checkpoints_dir/npcd-ema_power1_0min0_9999max0_9999buffers0-iter-001800000.pt --output /tmp/npcd_train/srn_cars/diffusion/eval
 ```
 Note that this requires the same evaluation setup as described above. The result of this evaluation is a FID=27.6.
+
+### SRN Chairs Training
+
+All following commands operate in an output directory at `/tmp/npcd_train/srn_chairs`. Change this to a custom output directory if you want.
+
+#### PointNeRF Autodecoder Training
+To run the training of the PointNeRF Autodecoder, run the following command:
+```bash
+python train_pointnerf.py --config configs/npcd_srnchairs.yaml --output /tmp/npcd_train/srn_chairs/pointnerf
+```
+
+To evaluate the resulting model, run the following command:
+```bash
+python eval_pointnerf.py --config configs/npcd_srnchairs.yaml --weights /tmp/npcd_train/srn_chairs/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-004320000.pt --output /tmp/npcd_train/srn_chairs/pointnerf/eval
+```
+The result of this evaluation is a PSNR=TODO.
+
+#### Diffusion Model Training
+To run the training of the diffusion model on the resulting neural point clouds from the previous stage, run the following command:
+```bash
+python train_diffusion.py --config configs/npcd_srnchairs.yaml --pointnerf_weights /tmp/npcd_train/srn_chairs/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-004320000.pt --output /tmp/npcd_train/srn_chairs/diffusion
+```
+
+To run the evaluation of the unconditional generation quality for the resulting model, run the following command:
+```bash
+python eval_diffusion.py --config configs/npcd_srnchairs.yaml --weights /tmp/npcd_train/srn_chairs/diffusion/weights_only_checkpoints_dir/npcd-ema_power1_0min0_9999max0_9999buffers0-iter-001800000.pt --output /tmp/npcd_train/srn_chairs/diffusion/eval
+```
+Note that this requires the same evaluation setup as described above. The result of this evaluation is a FID=TODO.
 
 ## Citation
 

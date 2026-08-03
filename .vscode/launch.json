@@ -11,7 +11,7 @@
             "program": "eval_pointnerf.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "preLaunchTask": "Clean PointNeRF Evaluation output",
+            "preLaunchTask": "Clean SRN Cars PointNeRF Evaluation output",
             "args": [
                 "--config", "configs/npcd_srncars.yaml",
                 "--weights", "weights/npcd_srncars.pt",
@@ -28,7 +28,7 @@
             "program": "eval_diffusion.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "preLaunchTask": "Clean Diffusion Evaluation output",
+            "preLaunchTask": "Clean SRN Cars Diffusion Evaluation output",
             "args": [
                 "--config", "configs/npcd_srncars.yaml",
                 "--weights", "weights/npcd_srncars.pt",
@@ -47,7 +47,7 @@
             "program": "train_pointnerf.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "preLaunchTask": "Clean PointNeRF Training output",
+            "preLaunchTask": "Clean SRN Cars PointNeRF Training output",
             "args": [
                 "--config", "configs/npcd_srncars.yaml",
                 "--output", "/tmp/npcd_debug/npcd_train/srn_cars/pointnerf",
@@ -64,11 +64,82 @@
             "program": "train_diffusion.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "preLaunchTask": "Clean Diffusion Training output",
+            "preLaunchTask": "Clean SRN Cars Diffusion Training output",
             "args": [
                 "--config", "configs/npcd_srncars.yaml",
                 "--pointnerf_weights", "weights/npcd_srncars.pt",  // does not start from scratch, but good for debugging
                 "--output", "/tmp/npcd_debug/npcd_train/srn_cars/diffusion",
+                "--num_workers", "0",  // for debugging
+            ],
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0",
+            // }
+        },
+        {
+            "name": "SRN Chairs PointNeRF Evaluation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "eval_pointnerf.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "preLaunchTask": "Clean SRN Chairs PointNeRF Evaluation output",
+            "args": [
+                "--config", "configs/npcd_srnchairs.yaml",
+                "--weights", "weights/npcd_srnchairs.pt",
+                "--output", "/tmp/npcd_debug/npcd_eval/srn_chairs/pointnerf",
+            ],
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0",
+            // }
+        },
+        {
+            "name": "SRN Chairs Diffusion Evaluation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "eval_diffusion.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "preLaunchTask": "Clean SRN Chairs Diffusion Evaluation output",
+            "args": [
+                "--config", "configs/npcd_srnchairs.yaml",
+                "--weights", "weights/npcd_srnchairs.pt",
+                "--output", "/tmp/npcd_debug/npcd_eval/srn_chairs/diffusion",
+                // "--dtype", "float16",
+                // "--tf32",
+            ],
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0",
+            // }
+        },
+        {
+            "name": "SRN Chairs PointNeRF Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train_pointnerf.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "preLaunchTask": "Clean SRN Chairs PointNeRF Training output",
+            "args": [
+                "--config", "configs/npcd_srnchairs.yaml",
+                "--output", "/tmp/npcd_debug/npcd_train/srn_chairs/pointnerf",
+                "--num_workers", "0",  // for debugging
+            ],
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0",
+            // }
+        },
+        {
+            "name": "SRN Chairs Diffusion Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train_diffusion.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "preLaunchTask": "Clean SRN Chairs Diffusion Training output",
+            "args": [
+                "--config", "configs/npcd_srnchairs.yaml",
+                "--pointnerf_weights", "weights/npcd_srnchairs.pt",  // does not start from scratch, but good for debugging
+                "--output", "/tmp/npcd_debug/npcd_train/srn_chairs/diffusion",
                 "--num_workers", "0",  // for debugging
             ],
             // "env": {

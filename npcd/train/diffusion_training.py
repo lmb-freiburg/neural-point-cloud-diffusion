@@ -21,6 +21,7 @@ class DiffusionTraining:
                  ema_params: Optional[Sequence[Tuple[float, float, float, bool]]] = None,
                  dtype: str = 'float16',
                  grad_clip_max_norm: Optional[float] = None,
+                 grad_clip_warmup: Optional[int] = None,
                  num_workers: int = 8,
                  print_interval: int = 100,
                  log_scalars_interval: int = 100,
@@ -59,9 +60,10 @@ class DiffusionTraining:
             
         ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}[dtype]
         self.autocast_ctx = torch.amp.autocast('cuda', dtype=ptdtype, enabled=(dtype != 'float32'))
-        self.scaler = torch.cuda.amp.GradScaler(enabled=(dtype == 'float16'))
+        self.scaler = torch.cuda.amp.GradScaler(enabled=(dtype == 'float16'))  # deprecated in up-to-date torch, but can't be changed to keep compatibility with original environment
         
         self.grad_clip_max_norm = grad_clip_max_norm
+        self.grad_clip_warmup = grad_clip_warmup
         self.dataloader = self.dataset.get_loader(batch_size=batch_size, shuffle=True, pin_memory=True,
                                                   num_workers=num_workers, drop_last=True)
         
@@ -96,6 +98,10 @@ class DiffusionTraining:
         ret += f"\n\tDataset size: {len(self.dataset)}"
         ret += f"\n\tDataloader size: {len(self.dataloader)}"
         ret += f"\n\tBatch size: {self.batch_size}"
+        if self.grad_clip_max_norm is not None:
+            ret += f"\n\tGradient clipping: max norm {self.grad_clip_max_norm}"
+            if self.grad_clip_warmup is not None:
+                ret += f" after {self.grad_clip_warmup} warmup iterations"
         ret += f"\n\tFinished iterations: {self.finished_iterations}"
         ret += f"\n\tMax iterations: {self.max_iterations}"
         return ret
@@ -163,8 +169,9 @@ class DiffusionTraining:
                             pointwise_losses = {k: v * inv_scale for k, v in pointwise_losses.items()}
                     
                     if self.grad_clip_max_norm is not None:
-                        self.scaler.unscale_(self.optimizer)
-                        torch.nn.utils.clip_grad_norm_(self.model.diffusion.parameters(), self.grad_clip_max_norm)
+                        if self.grad_clip_warmup is None or self.finished_iterations > self.grad_clip_warmup:
+                            self.scaler.unscale_(self.optimizer)
+                            torch.nn.utils.clip_grad_norm_(self.model.diffusion.parameters(), self.grad_clip_max_norm)
 
                     self.scaler.step(self.optimizer)
                     self.scaler.update()

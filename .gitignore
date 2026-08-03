@@ -163,6 +163,7 @@ weights/npcd_srncars.pt
 weights/npcd_srnchairs.pt
 data/inception-2015-12-05.pt
 data/cars_test_inception_stylegan.pkl
+data/chairs_test_inception_stylegan.pkl
 data/cars*
 data/chairs*
 mmgeneration

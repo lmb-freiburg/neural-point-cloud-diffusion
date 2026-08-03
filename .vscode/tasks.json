@@ -2,27 +2,51 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Clean PointNeRF Evaluation output",
+            "label": "Clean SRN Cars PointNeRF Evaluation output",
             "type": "shell",
             "command": "rm -rf /tmp/npcd_debug/npcd_eval/srn_cars/pointnerf",
             "problemMatcher": []
         },
         {
-            "label": "Clean Diffusion Evaluation output",
+            "label": "Clean SRN Cars Diffusion Evaluation output",
             "type": "shell",
             "command": "rm -rf /tmp/npcd_debug/npcd_eval/srn_cars/diffusion",
             "problemMatcher": []
         },
         {
-            "label": "Clean PointNeRF Training output",
+            "label": "Clean SRN Cars PointNeRF Training output",
             "type": "shell",
             "command": "rm -rf /tmp/npcd_debug/npcd_train/srn_cars/pointnerf",
             "problemMatcher": []
         },
         {
-            "label": "Clean Diffusion Training output",
+            "label": "Clean SRN Cars Diffusion Training output",
             "type": "shell",
             "command": "rm -rf /tmp/npcd_debug/npcd_train/srn_cars/diffusion",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean SRN Chairs PointNeRF Evaluation output",
+            "type": "shell",
+            "command": "rm -rf /tmp/npcd_debug/npcd_eval/srn_chairs/pointnerf",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean SRN Chairs Diffusion Evaluation output",
+            "type": "shell",
+            "command": "rm -rf /tmp/npcd_debug/npcd_eval/srn_chairs/diffusion",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean SRN Chairs PointNeRF Training output",
+            "type": "shell",
+            "command": "rm -rf /tmp/npcd_debug/npcd_train/srn_chairs/pointnerf",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean SRN Chairs Diffusion Training output",
+            "type": "shell",
+            "command": "rm -rf /tmp/npcd_debug/npcd_train/srn_chairs/diffusion",
             "problemMatcher": []
         }
     ]
