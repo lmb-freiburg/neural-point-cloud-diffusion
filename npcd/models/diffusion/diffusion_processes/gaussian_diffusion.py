@@ -33,6 +33,7 @@ class GaussianDiffusion(nn.Module):
 
         # nth element of the list is beta_(n+1), e.g. element at index 0 is beta_1 which is used in the distribution q(x_1 | x_0) (equation 2 in the DDPM paper)
         self.betas = torch.from_numpy(betas).float()
+        self.sqrt_betas = torch.sqrt(self.betas).float()
         self.alphas_cumprod = alphas_cumprod.float()
         self.alphas_cumprod_prev = alphas_cumprod_prev.float()
 
@@ -82,7 +83,7 @@ class GaussianDiffusion(nn.Module):
         
         return (
                 self._extract(self.sqrt_one_minus_betas.to(data_t.device), t, data_t.shape) * data_t +
-                self._extract(self.betas.to(data_t.device), t, data_t.shape) * noise
+                self._extract(self.sqrt_betas.to(data_t.device), t, data_t.shape) * noise  # Note: the codebase of the publication had a bug, as it used self.betas instead of self.sqrt_betas
         )
 
     def q_posterior_mean_variance(self, x_start, x_t, t):
@@ -195,6 +196,113 @@ class GaussianDiffusion(nn.Module):
             feats_ts.append(feats_t)
             feats_recons.append(feats_recon)
             
+        return coords_ts, coords_recons, feats_ts, feats_recons
+
+    def p_sample_loop_from_existing_traj(self, denoise_fn, 
+                                         coords_0=None, feats_0=None,
+                                         num_points=None, coords_dim=None, feats_dim=None,
+                                         num_coord_noise_steps=1000, num_feat_noise_steps=1000,
+                                         num_repaint_coords=0, num_repaint_feats=0,
+                                         num_repaint_steps_coords=0, num_repaint_steps_feats=0,
+                                         resample_qsample_noise=False,
+                                         coords_clip_range=None, feats_clip_range=None,
+                                         progress=False):
+
+        assert 0 <= num_coord_noise_steps <= self.num_timesteps
+        assert 0 <= num_feat_noise_steps <= self.num_timesteps
+        
+        if coords_0 is None:
+            assert feats_0 is not None, "At least one of coords_0 or feats_0 must be provided."
+            assert num_points is not None and coords_dim is not None
+            assert num_coord_noise_steps == self.num_timesteps, "num_coord_noise_steps must be equal to self.num_timesteps if coords_0 is None"
+            device = feats_0.device
+            dtype = feats_0.dtype
+            batch_size = feats_0.shape[0]
+            coords_shape = (batch_size, coords_dim, num_points)
+            coords_start = torch.randn(coords_shape, dtype=dtype, device=device)
+        else:
+            noise_coords = torch.randn_like(coords_0) if not resample_qsample_noise else None
+
+        if feats_0 is None:
+            assert coords_0 is not None, "At least one of coords_0 or feats_0 must be provided."
+            assert num_points is not None and feats_dim is not None
+            assert num_feat_noise_steps == self.num_timesteps, "num_feat_noise_steps must be equal to self.num_timesteps if feats_0 is None"
+            device = coords_0.device
+            dtype = coords_0.dtype
+            batch_size = coords_0.shape[0]
+            feats_shape = (batch_size, feats_dim, num_points)
+            feats_start = torch.randn(feats_shape, dtype=dtype, device=device)
+        else:
+            noise_feats = torch.randn_like(feats_0) if not resample_qsample_noise else None
+
+        batch_size = coords_0.shape[0] if coords_0 is not None else feats_0.shape[0]
+        device = coords_0.device if coords_0 is not None else feats_0.device
+        
+        coords_ts = []
+        feats_ts = []
+
+        coords_recons = []
+        feats_recons = []
+        
+        indices = list(range(self.num_timesteps))[::-1]  # go through reverse trajectory in order (e.g. from x_T to x_T-1, ..., to x_0); t=999 means going from x_1000 to x_999
+        if progress:
+            from tqdm.auto import tqdm
+            indices = tqdm(indices)
+        
+        for t in indices:
+            t_batch = torch.tensor([t] * batch_size, device=device)
+            
+            steps_left = t + 1  # e.g. if t=999, then steps_left=1000, meaning we're going from x_1000 to x_999
+            
+            if steps_left >= num_coord_noise_steps:  # always True for first iteration, as then steps_left = self.num_timesteps and num_coord_noise_steps <= self.num_timesteps
+                if coords_0 is None:
+                    assert steps_left == self.num_timesteps, "num_coord_noise_steps must be equal to self.num_timesteps if coords_0 is None"
+                    coords_t_plus_1 = coords_start
+                else:
+                    coords_t_plus_1 = self.q_sample(data_start=coords_0, t=t_batch, noise=noise_coords)
+            else:
+                coords_t_plus_1 = coords_t
+
+            if steps_left >= num_feat_noise_steps:
+                if feats_0 is None:
+                    assert steps_left == self.num_timesteps, "num_feat_noise_steps must be equal to self.num_timesteps if feats_0 is None"
+                    feats_t_plus_1 = feats_start
+                else:
+                    feats_t_plus_1 = self.q_sample(data_start=feats_0, t=t_batch, noise=noise_feats)
+            else:
+                feats_t_plus_1 = feats_t
+
+            coords_ts.append(coords_t_plus_1)
+            feats_ts.append(feats_t_plus_1)
+
+            out = self.p_sample(denoise_fn=denoise_fn, coords_t=coords_t_plus_1, feats_t=feats_t_plus_1, t=t_batch, coords_clip_range=coords_clip_range, feats_clipping_range=feats_clip_range)
+
+            coords_from_forward = coords_0 is not None and steps_left >= num_coord_noise_steps
+            feats_from_forward = feats_0 is not None and steps_left >= num_feat_noise_steps
+            if feats_from_forward and not coords_from_forward and t < num_repaint_steps_coords:
+                # coords need to be repainted
+                for _ in range(num_repaint_coords):
+                    coords_t, _, _, _ = out
+                    coords_t_plus_1 = self.q_sample_next(data_t=coords_t, t=t_batch)
+                    out = self.p_sample(denoise_fn=denoise_fn, coords_t=coords_t_plus_1, feats_t=feats_t_plus_1, t=t_batch, coords_clip_range=coords_clip_range, feats_clipping_range=feats_clip_range)
+            elif coords_from_forward and not feats_from_forward and t < num_repaint_steps_feats:
+                for _ in range(num_repaint_feats):
+                    _, _, feats_t, _ = out
+                    feats_t_plus_1 = self.q_sample_next(data_t=feats_t, t=t_batch)
+                    out = self.p_sample(denoise_fn=denoise_fn, coords_t=coords_t_plus_1, feats_t=feats_t_plus_1, t=t_batch, coords_clip_range=coords_clip_range, feats_clipping_range=feats_clip_range)
+            
+            coords_t, coords_recon, feats_t, feats_recon = out
+            coords_recons.append(coords_recon)
+            feats_recons.append(feats_recon)
+
+        if num_coord_noise_steps == 0:  # line 8 of the algorithm in the paper
+            coords_t = coords_0
+        if num_feat_noise_steps == 0:
+            feats_t = feats_0
+
+        coords_ts.append(coords_t)
+        feats_ts.append(feats_t)
+
         return coords_ts, coords_recons, feats_ts, feats_recons
 
     def _vb_terms_bpd(self, denoise_fn, coords_start, coords_t, feats_start, feats_t, t):

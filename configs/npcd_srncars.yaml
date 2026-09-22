@@ -30,3 +30,8 @@ diffusion_evaluation:
     poses_path: data/srncars_test_poses.npy
     intrinsics_path: data/srncars_test_intrinsics.npy
     inception_pkl_path: data/cars_test_inception_stylegan.pkl
+
+inference:
+    test_poses_path: data/srncars_test_poses.npy
+    intrinsics_path: data/srncars_test_intrinsics.npy
+    spiral_poses_path: data/srncars_spiral_poses.npy

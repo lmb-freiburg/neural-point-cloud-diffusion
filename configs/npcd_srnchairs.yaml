@@ -22,8 +22,6 @@ diffusion_training:
     base_learning_rate: 4.e-5
     weight_decay: 0.01
     use_ema: True
-    grad_clip_max_norm: 0.35
-    grad_clip_warmup: 10000
     ema_params:
         - !!python/tuple [1, 0.9999, 0.9999, False]
 
@@ -32,3 +30,8 @@ diffusion_evaluation:
     poses_path: data/srnchairs_test_poses.npy
     intrinsics_path: data/srnchairs_test_intrinsics.npy
     inception_pkl_path: data/chairs_test_inception_stylegan.pkl
+
+inference:
+    test_poses_path: data/srnchairs_test_poses.npy
+    intrinsics_path: data/srnchairs_test_intrinsics.npy
+    spiral_poses_path: data/srnchairs_spiral_poses.npy

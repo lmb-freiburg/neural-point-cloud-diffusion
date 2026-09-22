@@ -15,7 +15,7 @@ This is the official repository for the publication:
 ### Environment
 The experiments in the paper were conducted with python 3.10 and PyTorch 1.12 and CUDA 11.6 on Ubuntu 22.04. 
 
-To set up an environment with the comparable settings, clone this repository and run the following commands from the root directory of this repository. Optional commands, that might be helpful for setting up the environment on newer machines, are included as comments:
+To set up an environment with comparable settings, clone this repository and run the following commands from the root directory of this repository. Optional commands, that might be helpful for setting up the environment on newer machines, are included as comments:
 ```bash
 conda create -y -n npcd python=3.10
 conda activate npcd
@@ -51,7 +51,7 @@ conda create -y -n npcd python=3.13
 conda activate npcd
 
 pip install torch==2.13.0+cu132 torchvision==0.28.0+cu132 --index-url https://download.pytorch.org/whl/cu132
-pip install easydict pandas scikit-image scipy matplotlib Pillow wandb termcolor tensorboard pytoml tqdm pyyaml
+pip install easydict pandas scikit-image scipy matplotlib Pillow wandb termcolor tensorboard pytoml tqdm pyyaml ipykernel notebook
 
 # if necessary: export CC=gcc-13 CXX=g++-13
 git clone https://github.com/janericlenssen/torch_knnquery.git
@@ -141,14 +141,14 @@ To run the evaluation of the unconditional generation quality on SRN cars, run t
 ```bash
 python eval_diffusion.py --config configs/npcd_srncars.yaml --weights weights/npcd_srncars.pt --output /tmp/npcd_eval/srn_cars/diffusion
 ```
-The result of this evaluation is a FID=28.6.
+The result of this evaluation is a FID=27.7 (on an RTX 4090; on an RTX 3090 we have obtained FID=28.6).
 
 #### SRN Chairs Evaluation
 To run the evaluation of the unconditional generation quality on SRN chairs, run the following command (with choosing a custom output directory if you want):
 ```bash
 python eval_diffusion.py --config configs/npcd_srnchairs.yaml --weights weights/npcd_srnchairs.pt --output /tmp/npcd_eval/srn_chairs/diffusion
 ```
-The result of this evaluation is a FID=9.89.
+The result of this evaluation is a FID=9.89 (on an RTX 4090; on an RTX 3090 we have obtained FID=9.84).
 
 ## Training
 
@@ -163,26 +163,26 @@ All following commands operate in an output directory at `/tmp/npcd_train/srn_ca
 #### PointNeRF Autodecoder Training
 To run the training of the PointNeRF Autodecoder, run the following command:
 ```bash
-python train_pointnerf.py --config configs/npcd_srncars.yaml --output /tmp/npcd_train/srn_cars/pointnerf
+python train_pointnerf.py --config configs/npcd_srncars.yaml --output /tmp/npcd_train/srn_cars/pointnerf  # Optional: --wandb --exp_id train_srn_cars_pointnerf000001 --comment 'Re-train NPCD PointNeRF Autodecoder on SRN cars.' --seed 42
 ```
 
 To evaluate the resulting model, run the following command:
 ```bash
-python eval_pointnerf.py --config configs/npcd_srncars.yaml --weights /tmp/npcd_train/srn_cars/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-002197500.pt --output /tmp/npcd_train/srn_cars/pointnerf/eval
+python eval_pointnerf.py --config configs/npcd_srncars.yaml --weights /tmp/npcd_train/srn_cars/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-002197500.pt --output /tmp/npcd_train/srn_cars/pointnerf/eval/iter-002197500  # Optional: --wandb --log_dir /tmp/npcd_train/srn_cars/pointnerf --exp_id train_srn_cars_pointnerf000001 --comment 'Re-train NPCD PointNeRF Autodecoder on SRN cars.' --finished_iterations 2197500 --seed 42
 ```
 The result of this evaluation is a PSNR=30.3.
 
 #### Diffusion Model Training
 To run the training of the diffusion model on the resulting neural point clouds from the previous stage, run the following command:
 ```bash
-python train_diffusion.py --config configs/npcd_srncars.yaml --pointnerf_weights /tmp/npcd_train/srn_cars/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-002197500.pt --output /tmp/npcd_train/srn_cars/diffusion
+python train_diffusion.py --config configs/npcd_srncars.yaml --pointnerf_weights /tmp/npcd_train/srn_cars/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-002197500.pt --output /tmp/npcd_train/srn_cars/diffusion  # Optional: --wandb --exp_id train_srn_cars_diffusion000001 --comment 'Re-train NPCD Diffusion model on SRN cars based on train_srn_cars_pointnerf000001 PointNeRF autodecoder.' --seed 42
 ```
 
 To run the evaluation of the unconditional generation quality for the resulting model, run the following command:
 ```bash
-python eval_diffusion.py --config configs/npcd_srncars.yaml --weights /tmp/npcd_train/srn_cars/diffusion/weights_only_checkpoints_dir/npcd-ema_power1_0min0_9999max0_9999buffers0-iter-001800000.pt --output /tmp/npcd_train/srn_cars/diffusion/eval
+python eval_diffusion.py --config configs/npcd_srncars.yaml --weights /tmp/npcd_train/srn_cars/diffusion/weights_only_checkpoints_dir/npcd-ema_power1_0min0_9999max0_9999buffers0-iter-001800000.pt --output /tmp/npcd_train/srn_cars/diffusion/eval/ema_power1_0min0_9999max0_9999buffers0-iter-001800000  # Optional: --wandb --log_dir /tmp/npcd_train/srn_cars/diffusion --exp_id train_srn_cars_diffusion000001 --comment 'Re-train NPCD Diffusion model on SRN cars based on train_srn_cars_pointnerf000001 PointNeRF autodecoder.' --finished_iterations 1800000 --seed 42
 ```
-Note that this requires the same evaluation setup as described above. The result of this evaluation is a FID=27.6.
+Note that this requires the same evaluation setup as described above. The result of this evaluation is a FID=27.9 (on an RTX 4090).
 
 ### SRN Chairs Training
 
@@ -191,26 +191,26 @@ All following commands operate in an output directory at `/tmp/npcd_train/srn_ch
 #### PointNeRF Autodecoder Training
 To run the training of the PointNeRF Autodecoder, run the following command:
 ```bash
-python train_pointnerf.py --config configs/npcd_srnchairs.yaml --output /tmp/npcd_train/srn_chairs/pointnerf
+python train_pointnerf.py --config configs/npcd_srnchairs.yaml --output /tmp/npcd_train/srn_chairs/pointnerf  # Optional: --wandb --exp_id train_srn_chairs_pointnerf000001 --comment 'Re-train NPCD PointNeRF Autodecoder on SRN chairs.' --seed 42
 ```
 
 To evaluate the resulting model, run the following command:
 ```bash
-python eval_pointnerf.py --config configs/npcd_srnchairs.yaml --weights /tmp/npcd_train/srn_chairs/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-004320000.pt --output /tmp/npcd_train/srn_chairs/pointnerf/eval
+python eval_pointnerf.py --config configs/npcd_srnchairs.yaml --weights /tmp/npcd_train/srn_chairs/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-004320000.pt --output /tmp/npcd_train/srn_chairs/pointnerf/eval/iter-004320000  # Optional: --wandb --log_dir /tmp/npcd_train/srn_chairs/pointnerf --exp_id train_srn_chairs_pointnerf000001 --comment 'Re-train NPCD PointNeRF Autodecoder on SRN chairs.' --finished_iterations 4320000 --seed 42
 ```
-The result of this evaluation is a PSNR=TODO.
+The result of this evaluation is a PSNR=33.4.
 
 #### Diffusion Model Training
 To run the training of the diffusion model on the resulting neural point clouds from the previous stage, run the following command:
 ```bash
-python train_diffusion.py --config configs/npcd_srnchairs.yaml --pointnerf_weights /tmp/npcd_train/srn_chairs/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-004320000.pt --output /tmp/npcd_train/srn_chairs/diffusion
+python train_diffusion.py --config configs/npcd_srnchairs.yaml --pointnerf_weights /tmp/npcd_train/srn_chairs/pointnerf/weights_only_checkpoints_dir/pointnerf-iter-004320000.pt --output /tmp/npcd_train/srn_chairs/diffusion  # Optional: --wandb --exp_id train_srn_chairs_diffusion000001 --comment 'Re-train NPCD Diffusion model on SRN chairs based on train_srn_chairs_pointnerf000001 PointNeRF autodecoder.' --seed 42
 ```
 
 To run the evaluation of the unconditional generation quality for the resulting model, run the following command:
 ```bash
-python eval_diffusion.py --config configs/npcd_srnchairs.yaml --weights /tmp/npcd_train/srn_chairs/diffusion/weights_only_checkpoints_dir/npcd-ema_power1_0min0_9999max0_9999buffers0-iter-001800000.pt --output /tmp/npcd_train/srn_chairs/diffusion/eval
+python eval_diffusion.py --config configs/npcd_srnchairs.yaml --weights /tmp/npcd_train/srn_chairs/diffusion/weights_only_checkpoints_dir/npcd-ema_power1_0min0_9999max0_9999buffers0-iter-001800000.pt --output /tmp/npcd_train/srn_chairs/diffusion/eval/ema_power1_0min0_9999max0_9999buffers0-iter-001800000  # Optional: --wandb --log_dir /tmp/npcd_train/srn_chairs/diffusion --exp_id train_srn_chairs_diffusion000001 --comment 'Re-train NPCD Diffusion model on SRN chairs based on train_srn_chairs_pointnerf000001 PointNeRF autodecoder.' --finished_iterations 1800000 --seed 42
 ```
-Note that this requires the same evaluation setup as described above. The result of this evaluation is a FID=TODO.
+Note that this requires the same evaluation setup as described above. The result of this evaluation is a FID=9.89 (on an RTX 4090).
 
 ## Citation
 

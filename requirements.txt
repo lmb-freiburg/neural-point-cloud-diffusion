@@ -11,3 +11,5 @@ pytoml
 pyyaml
 tqdm
 scipy==1.9.3
+ipykernel
+notebook

@@ -1,0 +1,14 @@
+model:
+    n_obj: 2480
+    coords_dim: 3
+    feats_dim: 32
+    num_points: 512
+    use_view_dir: True
+    max_shading_pts: 70
+    width: 1024
+    layers: 23
+    heads: 16
+
+inference:
+    test_poses_path: data/srnchairs_test_poses.npy
+    intrinsics_path: data/srnchairs_test_intrinsics.npy
